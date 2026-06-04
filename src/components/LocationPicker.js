@@ -91,11 +91,14 @@ export default function LocationPicker({
           `https://maps.googleapis.com/maps/api/place/autocomplete/json` +
           `?input=${encodeURIComponent(text)}` +
           `&key=${GOOGLE_MAPS_API_KEY}` +
-          `&components=country:in` + // Bias to India — remove or change as needed
           `&language=en`;
 
         const res = await fetch(url);
         const data = await res.json();
+        
+        if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+          console.warn('PLACES API ERROR:', data);
+        }
 
         if (data.status === 'OK' && data.predictions) {
           setSuggestions(
@@ -109,7 +112,7 @@ export default function LocationPicker({
           setSuggestions([]);
         }
       } catch (err) {
-        console.log('Google Places search error:', err);
+        console.warn('Google Places network error:', err);
         setSuggestions([]);
       } finally {
         setSearching(false);

@@ -14,6 +14,10 @@ export function FormInput({
   placeholder,
   multiline = false,
   keyboardType = 'default',
+  secureTextEntry = false,
+  autoCapitalize = 'sentences',
+  autoCorrect = true,
+  returnKeyType,
   style,
   inputStyle,
   maxLength,
@@ -30,6 +34,10 @@ export function FormInput({
           placeholderTextColor={Colors.textMuted}
           multiline={multiline}
           keyboardType={keyboardType}
+          secureTextEntry={secureTextEntry}
+          autoCapitalize={autoCapitalize}
+          autoCorrect={autoCorrect}
+          returnKeyType={returnKeyType}
           maxLength={maxLength}
           editable={editable}
           style={[

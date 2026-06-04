@@ -8,8 +8,9 @@ import Colors from './src/theme/colors';
 
 import GeofenceService from './src/services/GeofenceService';
 
-
 import WelcomeScreen from './src/screens/WelcomeScreen';
+import LoginScreen from './src/screens/LoginScreen';
+import SignupScreen from './src/screens/SignupScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import NewReminderScreen from './src/screens/NewReminderScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
@@ -17,25 +18,29 @@ import AllRemindersScreen from './src/screens/AllRemindersScreen';
 
 const Stack = createNativeStackNavigator();
 
+// Simple inline loading screen — avoids unmounting NavigationContainer
+function LoadingScreen() {
+  return (
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" color={Colors.accentOrange} />
+    </View>
+  );
+}
+
 function AppNavigator() {
-  const { isRegistered, loading } = useApp();
+  const { isLoggedIn, loading } = useApp();
 
   useEffect(() => {
-    if (!loading && isRegistered) {
-      GeofenceService.requestAllPermissions().then((result) => {
-        console.log('Permissions result:', result);
-      });
+    if (!loading && isLoggedIn) {
+      GeofenceService.requestAllPermissions().catch(() => {});
     }
-  }, [loading, isRegistered]);
+  }, [loading, isLoggedIn]);
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.accentOrange} />
-      </View>
-    );
-  }
-
+  // ─── IMPORTANT: NavigationContainer is NEVER unmounted ─────────────────────
+  // We use the React Navigation auth-flow pattern: conditional screens inside
+  // a single always-mounted Stack.Navigator. When isLoggedIn flips true,
+  // React Navigation automatically shows Home. When it flips false, it shows
+  // the auth screens. No navigation.replace() needed in Login/Signup screens.
   return (
     <NavigationContainer>
       <Stack.Navigator
@@ -44,13 +49,26 @@ function AppNavigator() {
           animation: 'slide_from_right',
           contentStyle: { backgroundColor: Colors.backgroundLight },
         }}
-        initialRouteName={isRegistered ? 'Home' : 'Welcome'}
       >
-        <Stack.Screen name="Welcome" component={WelcomeScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="NewReminder" component={NewReminderScreen} />
-        <Stack.Screen name="Settings" component={SettingsScreen} />
-        <Stack.Screen name="AllReminders" component={AllRemindersScreen} />
+        {loading ? (
+          // ── Session check in progress ─────────────────────────────────────
+          <Stack.Screen name="Loading" component={LoadingScreen} />
+        ) : isLoggedIn ? (
+          // ── Authenticated screens ─────────────────────────────────────────
+          <>
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="NewReminder" component={NewReminderScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="AllReminders" component={AllRemindersScreen} />
+          </>
+        ) : (
+          // ── Auth screens ──────────────────────────────────────────────────
+          <>
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Signup" component={SignupScreen} />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -74,4 +92,3 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
-

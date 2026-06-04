@@ -1,40 +1,37 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Animated,
   Dimensions,
-  KeyboardAvoidingView,
-  Platform,
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '../theme/colors';
-import { Typography, Spacing, BorderRadius, Shadows } from '../theme/typography';
-import { ActionButton } from '../components/Buttons';
-import { FormInput } from '../components/FormElements';
-import { useApp } from '../context/AppContext';
+import { Typography, Spacing } from '../theme/typography';
 
 const { width, height } = Dimensions.get('window');
 
+/**
+ * WelcomeScreen — Animated splash screen.
+ * Plays the sun animation + tagline, then navigates to Login.
+ * Only shown when the user is not logged in.
+ */
 export default function WelcomeScreen({ navigation }) {
-  const [nickname, setNickname] = useState('');
-  const { register } = useApp();
   const insets = useSafeAreaInsets();
 
   // Animations
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(40)).current;
   const sunScale = useRef(new Animated.Value(0.5)).current;
   const sunRotate = useRef(new Animated.Value(0)).current;
-  const formSlide = useRef(new Animated.Value(60)).current;
-  const formFade = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(40)).current;
+  const taglineFade = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Staggered entrance animation
     Animated.sequence([
+      // Phase 1: Sun spins in
       Animated.parallel([
         Animated.spring(sunScale, {
           toValue: 1,
@@ -48,6 +45,7 @@ export default function WelcomeScreen({ navigation }) {
           useNativeDriver: true,
         }),
       ]),
+      // Phase 2: App name slides up
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -60,27 +58,18 @@ export default function WelcomeScreen({ navigation }) {
           useNativeDriver: true,
         }),
       ]),
-      Animated.parallel([
-        Animated.timing(formFade, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.spring(formSlide, {
-          toValue: 0,
-          friction: 6,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
+      // Phase 3: Tagline fades in
+      Animated.timing(taglineFade, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      // Phase 4: Short pause before navigating
+      Animated.delay(600),
+    ]).start(() => {
+      navigation.replace('Login');
+    });
   }, []);
-
-  const handleGetStarted = async () => {
-    if (nickname.trim().length > 0) {
-      await register(nickname.trim());
-      navigation.replace('Home');
-    }
-  };
 
   const spin = sunRotate.interpolate({
     inputRange: [0, 1],
@@ -96,19 +85,13 @@ export default function WelcomeScreen({ navigation }) {
       <View style={styles.bgCircle2} />
       <View style={styles.bgCircle3} />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.content}
-      >
+      <View style={styles.content}>
         {/* Sun Illustration */}
         <Animated.View
           style={[
             styles.sunContainer,
             {
-              transform: [
-                { scale: sunScale },
-                { rotate: spin },
-              ],
+              transform: [{ scale: sunScale }, { rotate: spin }],
             },
           ]}
         >
@@ -142,43 +125,14 @@ export default function WelcomeScreen({ navigation }) {
           }}
         >
           <Text style={styles.appName}>Oye Sunn!</Text>
+        </Animated.View>
+
+        {/* Tagline */}
+        <Animated.View style={{ opacity: taglineFade }}>
           <Text style={styles.tagline}>
             Location based reminders{'\n'}that never let you forget.
           </Text>
-        </Animated.View>
 
-        {/* Registration panel */}
-        <Animated.View
-          style={[
-            styles.registerPanel,
-            Shadows.strong,
-            {
-              opacity: formFade,
-              transform: [{ translateY: formSlide }],
-            },
-          ]}
-        >
-          <Text style={styles.welcomeText}>Welcome aboard! 👋</Text>
-
-          <FormInput
-            label="Enter your Nickname to Begin"
-            value={nickname}
-            onChangeText={setNickname}
-            placeholder="e.g. Your Name"
-            maxLength={20}
-          />
-
-          <ActionButton
-            title="Get Started"
-            icon="arrow-forward"
-            onPress={handleGetStarted}
-            disabled={nickname.trim().length === 0}
-            style={{ marginTop: Spacing.sm }}
-          />
-        </Animated.View>
-
-        {/* Bottom tagline */}
-        <Animated.View style={{ opacity: formFade }}>
           <View style={styles.bottomRow}>
             <Ionicons name="location" size={14} color={Colors.greenSoft} />
             <Text style={styles.bottomText}>
@@ -186,7 +140,7 @@ export default function WelcomeScreen({ navigation }) {
             </Text>
           </View>
         </Animated.View>
-      </KeyboardAvoidingView>
+      </View>
     </View>
   );
 }
@@ -251,7 +205,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.accentOrange,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadows.strong,
+    shadowColor: '#1E2B1E',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 8,
   },
   sunEmoji: {
     fontSize: 36,
@@ -283,30 +241,14 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xxxl,
     lineHeight: 24,
   },
-
-  // Registration panel
-  registerPanel: {
-    backgroundColor: Colors.backgroundLight,
-    borderRadius: BorderRadius.xxl,
-    padding: Spacing.xxl,
-    width: '100%',
-    marginBottom: Spacing.xl,
-  },
-  welcomeText: {
-    ...Typography.h2,
-    color: Colors.textDark,
-    marginBottom: Spacing.xl,
-  },
-
-  // Bottom
   bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing.md,
   },
   bottomText: {
-    ...Typography.small,
+    fontSize: 13,
+    fontWeight: '400',
     color: Colors.greenSoft,
     marginLeft: Spacing.xs,
   },

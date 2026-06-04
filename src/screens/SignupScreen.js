@@ -1,0 +1,376 @@
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Colors from '../theme/colors';
+import { Typography, Spacing, BorderRadius, Shadows } from '../theme/typography';
+import { FormInput } from '../components/FormElements';
+import { ActionButton } from '../components/Buttons';
+import { useApp } from '../context/AppContext';
+
+export default function SignupScreen({ navigation }) {
+  const { register } = useApp();
+  const insets = useSafeAreaInsets();
+
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const validate = () => {
+    if (!username.trim()) return 'Please choose a username.';
+    if (username.trim().length < 3) return 'Username must be at least 3 characters.';
+    if (/\s/.test(username)) return 'Username cannot contain spaces.';
+    if (!password) return 'Please choose a password.';
+    if (password.length < 6) return 'Password must be at least 6 characters.';
+    if (password !== confirmPassword) return 'Passwords do not match.';
+    return null;
+  };
+
+  const handleSignup = async () => {
+    setErrorMsg('');
+    const validationError = validate();
+    if (validationError) {
+      setErrorMsg(validationError);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await register(username.trim(), password, nickname.trim() || username.trim());
+      // Navigation is handled automatically by the App.js auth pattern
+    } catch (err) {
+      const msg = err.message || '';
+      if (msg.includes('User already registered') || msg.includes('already been registered')) {
+        setErrorMsg('This username is already taken. Please choose another.');
+      } else {
+        setErrorMsg(msg || 'Sign up failed. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="light-content" />
+
+      {/* Decorative background circles */}
+      <View style={styles.bgCircle1} />
+      <View style={styles.bgCircle2} />
+      <View style={styles.bgCircle3} />
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.kav}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Animated.View
+            style={[
+              styles.inner,
+              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+            ]}
+          >
+            {/* Back button */}
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backBtn}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="arrow-back" size={20} color={Colors.textLight} />
+              <Text style={styles.backText}>Back to Login</Text>
+            </TouchableOpacity>
+
+            {/* Logo */}
+            <View style={styles.logoRow}>
+              <View style={styles.logoCircle}>
+                <Text style={styles.logoEmoji}>☀️</Text>
+              </View>
+              <Text style={styles.appName}>Oye Sunn!</Text>
+            </View>
+
+            <Text style={styles.heading}>Create an account</Text>
+            <Text style={styles.subheading}>
+              Set up your username and a nickname to display in the app.
+            </Text>
+
+            {/* Form card */}
+            <View style={[styles.card, Shadows.strong]}>
+              <FormInput
+                label="Username"
+                value={username}
+                onChangeText={(t) => {
+                  setUsername(t.toLowerCase().replace(/\s/g, ''));
+                  setErrorMsg('');
+                }}
+                placeholder="e.g. john_doe"
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={30}
+              />
+
+              <FormInput
+                label="Nickname (shown in the app)"
+                value={nickname}
+                onChangeText={(t) => {
+                  setNickname(t);
+                  setErrorMsg('');
+                }}
+                placeholder="e.g. John — defaults to username"
+                maxLength={25}
+              />
+
+              <FormInput
+                label="Password"
+                value={password}
+                onChangeText={(t) => {
+                  setPassword(t);
+                  setErrorMsg('');
+                }}
+                placeholder="Min. 6 characters"
+                secureTextEntry
+                maxLength={72}
+              />
+
+              <FormInput
+                label="Confirm Password"
+                value={confirmPassword}
+                onChangeText={(t) => {
+                  setConfirmPassword(t);
+                  setErrorMsg('');
+                }}
+                placeholder="Re-enter your password"
+                secureTextEntry
+                maxLength={72}
+              />
+
+              {/* Inline error */}
+              {!!errorMsg && (
+                <View style={styles.errorRow}>
+                  <Ionicons name="alert-circle" size={16} color={Colors.danger} />
+                  <Text style={styles.errorText}>{errorMsg}</Text>
+                </View>
+              )}
+
+              <ActionButton
+                title={isLoading ? 'Creating account…' : 'Sign Up'}
+                icon="person-add-outline"
+                onPress={handleSignup}
+                disabled={isLoading}
+                style={{ marginTop: Spacing.md }}
+              />
+            </View>
+
+            {/* Nickname hint */}
+            <View style={styles.hintRow}>
+              <Ionicons name="information-circle-outline" size={14} color={Colors.greenSoft} />
+              <Text style={styles.hintText}>
+                Your nickname is how we greet you. You can change it later in Settings.
+              </Text>
+            </View>
+
+            {/* Already have account */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Login')}
+              style={styles.linkRow}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.linkText}>Already have an account? </Text>
+              <Text style={styles.linkAction}>Log In</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.backgroundDark,
+  },
+  kav: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing.xxl,
+    paddingVertical: Spacing.xxxl,
+  },
+  inner: {},
+
+  // Decorative bg
+  bgCircle1: {
+    position: 'absolute',
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    backgroundColor: 'rgba(74, 95, 74, 0.15)',
+    top: -80,
+    right: -100,
+  },
+  bgCircle2: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(74, 95, 74, 0.1)',
+    bottom: 60,
+    left: -60,
+  },
+  bgCircle3: {
+    position: 'absolute',
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(232, 113, 58, 0.08)',
+    top: 300,
+    left: 40,
+  },
+
+  // Back
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.xxl,
+    alignSelf: 'flex-start',
+  },
+  backText: {
+    ...Typography.body,
+    color: Colors.textLight,
+    marginLeft: Spacing.xs,
+  },
+
+  // Logo
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.xl,
+  },
+  logoCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.accentOrange,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.sm,
+    ...Shadows.medium,
+  },
+  logoEmoji: {
+    fontSize: 20,
+  },
+  appName: {
+    ...Typography.brand,
+    fontSize: 26,
+    color: Colors.textLight,
+  },
+
+  // Headings
+  heading: {
+    ...Typography.h1,
+    color: Colors.textLight,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+  },
+  subheading: {
+    ...Typography.body,
+    color: Colors.greenSoft,
+    textAlign: 'center',
+    marginBottom: Spacing.xxl,
+    lineHeight: 22,
+  },
+
+  // Card
+  card: {
+    backgroundColor: Colors.backgroundLight,
+    borderRadius: BorderRadius.xxl,
+    padding: Spacing.xxl,
+    marginBottom: Spacing.lg,
+  },
+
+  // Error
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(196, 75, 75, 0.1)',
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  errorText: {
+    ...Typography.small,
+    color: Colors.danger,
+    marginLeft: Spacing.xs,
+    flex: 1,
+  },
+
+  // Hint
+  hintRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: Spacing.xl,
+    paddingHorizontal: Spacing.xs,
+  },
+  hintText: {
+    ...Typography.small,
+    color: Colors.greenSoft,
+    marginLeft: Spacing.xs,
+    flex: 1,
+    lineHeight: 18,
+  },
+
+  // Login link
+  linkRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: Spacing.sm,
+  },
+  linkText: {
+    ...Typography.body,
+    color: Colors.greenSoft,
+  },
+  linkAction: {
+    ...Typography.bodyBold,
+    color: Colors.accentOrange,
+  },
+});

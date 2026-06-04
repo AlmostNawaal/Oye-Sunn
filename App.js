@@ -6,12 +6,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider, useApp } from './src/context/AppContext';
 import Colors from './src/theme/colors';
 
-// IMPORTANT: Import GeofenceService at the top level so the
-// TaskManager.defineTask() call executes on app startup.
-// expo-task-manager requires this to be registered before the app renders.
 import GeofenceService from './src/services/GeofenceService';
 
-// Screens
+
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import NewReminderScreen from './src/screens/NewReminderScreen';
@@ -23,7 +20,6 @@ const Stack = createNativeStackNavigator();
 function AppNavigator() {
   const { isRegistered, loading } = useApp();
 
-  // Request permissions once when the navigator mounts
   useEffect(() => {
     if (!loading && isRegistered) {
       GeofenceService.requestAllPermissions().then((result) => {

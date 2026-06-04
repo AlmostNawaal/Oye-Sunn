@@ -17,8 +17,14 @@
       "infoPlist": {
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Oye Sunn needs your location to trigger reminders when you enter or leave your saved places.",
         "NSLocationWhenInUseUsageDescription": "Oye Sunn needs your location to set up location-based reminders.",
-        "UIBackgroundModes": ["location", "fetch"]
-      }
+        "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "location",
+          "fetch"
+        ]
+      },
+      "bundleIdentifier": "com.anonymous.oyeesun"
     },
     "android": {
       "adaptiveIcon": {
@@ -31,13 +37,19 @@
         "ACCESS_COARSE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
         "FOREGROUND_SERVICE",
-        "RECEIVE_BOOT_COMPLETED"
+        "RECEIVE_BOOT_COMPLETED",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
       ],
       "config": {
         "googleMaps": {
-          "apiKey": "YOUR_GOOGLE_API_KEY_HERE"
+          "apiKey": "AIzaSyDjPzrQnPw5r9Wvf8C8hnkOajhaoqJ6huU"
         }
-      }
+      },
+      "package": "com.anonymous.oyeesun"
     },
     "web": {
       "favicon": "./assets/favicon.png"

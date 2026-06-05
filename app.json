@@ -46,7 +46,7 @@
       ],
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyDjPzrQnPw5r9Wvf8C8hnkOajhaoqJ6huU"
+          "apiKey": "YOUR-API-KEY-HERE"
         }
       },
       "package": "com.anonymous.oyeesun"
